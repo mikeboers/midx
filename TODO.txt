@@ -1,17 +1,58 @@
-- use SQLite as a shared datastore
+- need to move a lot more logic out of the broker (which becomes a datastore
+  for File and Sequence objects), or encapsulate all scanning logic into a
+  Scanner that a Broker can exploit.
+
+    Broker.put_files(iter of File)
+    Broker.get_files(sequence_id)
+    Broker.delete_files(iter of ids)
+
+    Broker.put_sequences(iter of Sequence)
+    Broker.get_sequence(prefix, postfix)
+    Broker.delete_sequences(iter of ids)
+
 - `midx scan` walks a directory and adds to a given datastore
+
     - a leading zero indicates that there is padding, otherwise assume None
     - include/exclude patterns to avoid walking into some directories
     - include/exclude patterns to not scan certain files
+
     - merges all new data with all old data
+    - drops old data which no longer seems to exist (perhaps into an archive
+      or by settings an exists=False flag)
 
-- how to keep SQLite data consistent without locking it?
-    - when there is new data:
-        1) fetch existing data
-        2) merge in new data
-        3) insert newly merged data (those lacking an ID)
-        4) delete those which were merged (those with an ID which are
-           missing from the newly merged)
+    - have the scanner and the database updater in a separate thread and
+      communicating via a Queue, should speed it up somewhat
 
-- `midx watch` via fsevents and fanotify
+- need to have file level attributes up front
+    - columns: seq_id, file_no, st_ino, st_dev, st_size, st_mtime, st_ctime, itime (index time), checksum (md5), userdata (json)
+    - don't bother calculating md5s on the initial scan, unless requested
+    - how to update all of this, now that it is in two tables?
+        - go through this process for each (prefix, postfix) group
+        - SELECT existing file numbers
+        - INSERT OR REPLACE into the files table, where the primary key is both the sequence
+          and the file number
+        - DELETE existing ones which were not in this scan
+        - SELECT existing file sequences
+        - merge_overlapping with the new ones
+        - INSERT new sequences
+        - UPDATE files whose index has changed
+        - DELETE old sequences which were merged away
+    - at any point in the above procedure there should be a reasonable-ish
+      view of the data
+
+- `midx checksum [--verify] <db> <path> [...]`
+    - calculates the missing checksums in the index under the given paths
+    - if asked to verify, calculates all checksums and compares them
+
+- `midx watch` via fsevents/fanotify/inotify
+    - need a common-ish API
+    - we still cant recursively watch a subset of directories, but fanotify
+      will efficiently watch a full filesystem. If we have a single daemon
+      that is watching the full file system then it can dispatch events to
+      individual indexes as it sees fit. `midx register <index> <path> [...]`
+      will connect to the daemon via a socket and register a path.
+    - fanotify can't see deletes, but perhaps we can add a little bit of
+      tracking to find renames (by examining inodes of newly created files, and
+      seeing if they match that of a file in the cache that no longer exists).
+
 - `midx grep`
