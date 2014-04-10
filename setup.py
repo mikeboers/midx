@@ -18,8 +18,11 @@ setup(
     ],
     
     entry_points={
+        'midx_commands': [
+            'scan = midx.commands.scan:scan',
+        ],
         'console_scripts': [
-            # XXX
+            'midx = midx.commands.main:main',
         ],
     },
 

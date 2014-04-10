@@ -1,0 +1,17 @@
+- use SQLite as a shared datastore
+- `midx scan` walks a directory and adds to a given datastore
+    - a leading zero indicates that there is padding, otherwise assume None
+    - include/exclude patterns to avoid walking into some directories
+    - include/exclude patterns to not scan certain files
+    - merges all new data with all old data
+
+- how to keep SQLite data consistent without locking it?
+    - when there is new data:
+        1) fetch existing data
+        2) merge in new data
+        3) insert newly merged data (those lacking an ID)
+        4) delete those which were merged (those with an ID which are
+           missing from the newly merged)
+
+- `midx watch` via fsevents and fanotify
+- `midx grep`

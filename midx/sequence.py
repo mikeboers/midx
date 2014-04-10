@@ -1,11 +1,13 @@
 
 import collections
 
-BaseSequence = collections.namedtuple('BaseSequence', ('prefix', 'postfix', 'start', 'end', 'padding'))
+BaseSequence = collections.namedtuple('BaseSequence',
+    ('prefix', 'postfix', 'start', 'end', 'padding', 'id')
+)
 
 class Sequence(BaseSequence):
-    def __new__(cls, prefix, postfix, start, end, padding=None):
-        return super(Sequence, cls).__new__(cls, prefix, postfix, start, end, padding)
+    def __new__(cls, prefix, postfix, start, end, padding=None, id=None):
+        return super(Sequence, cls).__new__(cls, prefix, postfix, start, end, padding, id)
 
 
 def merge_overlapping(seqs):
@@ -16,12 +18,15 @@ def merge_overlapping(seqs):
     """
 
     seqs = sorted(seqs, key=lambda s: s.start)
-    merged = []
+    if len(seqs) <= 1:
+        return seqs
+
+    merged = [seqs.pop(0)]
     last = None
 
     for seq in seqs:
 
-        if merged and seq.start <= merged[-1].end + 1:
+        if seq.start <= merged[-1].end + 1:
             last = merged.pop(-1)
             merged.append(Sequence(
                 seq.prefix,
