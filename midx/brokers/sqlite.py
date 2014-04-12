@@ -30,8 +30,8 @@ def create_sequences_table(cur):
     )''')
 
 @patch
-def create_files_table(cur):
-    cur.execute('''CREATE TABLE files (
+def create_file_stats_table(cur):
+    cur.execute('''CREATE TABLE file_stats (
         id INTEGER PRIMARY KEY,
         sequence_id INTEGER REFERENCES sequences(id) NOT NULL,
         'number' INTEGER NOT NULL,
@@ -40,8 +40,6 @@ def create_files_table(cur):
         size INTEGER NOT NULL,
         mtime INTEGER NOT NULL,
         ctime INTEGER NOT NULL,
-        itime INTEGER NOT NULL, -- last index time
-        checksum TEXT,
         UNIQUE (sequence_id, 'number')
     )''')
 
@@ -87,8 +85,8 @@ class SQLiteBroker(object):
         for (prefix, postfix), group in itertools.groupby(sequences, key=key):
             with self._cursor() as cur:
 
-                cur.execute('SELECT id FROM sequences WHERE prefix = ? AND postfix = ?', [prefix, postfix])
-                existing = set(row[0] for row in cur)
+                cur.execute('SELECT prefix, postfix, start, end, padding, id FROM sequences WHERE prefix = ? AND postfix = ?', [prefix, postfix])
+                existing = [Sequence(*row) for row in cur]
 
                 if replace:
                     to_add = group
@@ -102,14 +100,9 @@ class SQLiteBroker(object):
                             VALUES (?, ?, ?, ?, ?)
                         ''', [prefix, postfix, seq.start, seq.end, seq.padding])
                         seq.id = cur.lastrowid
+                        print 'added', seq.id
 
-                    for file_ in seq.files:
-                        cur.execute('''INSERT INTO files
-                            (sequence_id, 'number', inode, device, size, mtime, ctime, itime)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', [seq.id, file_.number, file_.inode, file_.device, file_.size, file_.mtime, file_.ctime, file_.itime])
-                        file_.id = cur.lastrowid
-
-                to_delete = existing.difference(seq.id for seq in to_add)
+                to_delete = set(s.id for s in existing).difference(seq.id for seq in to_add)
                 if to_delete:
+                    print 'deleting', to_delete
                     cur.executemany('''DELETE FROM sequences WHERE id = ?''', ([x] for x in to_delete))

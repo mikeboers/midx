@@ -16,6 +16,7 @@ class Index(object):
 
     def scan(self, root):
         root = os.path.abspath(root)
-        for sequence in Scanner().walk(root):
-            self.broker.add_sequences([sequence], replace=True)
+        key = lambda s: (s.prefix, s.postfix)
+        for key, sequences in itertools.groupby(Scanner().walk(root), key):
+            self.broker.add_sequences(sequences, replace=True)
 

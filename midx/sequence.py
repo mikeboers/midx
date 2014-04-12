@@ -16,7 +16,7 @@ class Sequence(object):
             self.postfix,
             self.start,
             self.end,
-            len(self.files),
+            len(self.files)
         )
 
     def is_matching(self, other):

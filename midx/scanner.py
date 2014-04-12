@@ -29,12 +29,6 @@ class Scanner(object):
             for file_name in sorted(file_names):
 
                 path = os.path.join(dir_path, file_name)
-                try:
-                    stat = os.stat(path)
-                except OSError:
-                    log.exception('could not stat %r' % path)
-                    continue
-
                 m = sequence_num_re.match(path)
                 if not m:
                     continue
@@ -49,19 +43,10 @@ class Scanner(object):
                     sequence.end + 1 < num
                 ):
                     if sequence is not None:
-                        yield Sequence
+                        yield sequence
                     sequence = Sequence(prefix, postfix, num, num, padding)
 
                 sequence.end = num
-                file_ = File(None, sequence, num,
-                    stat.st_ino,
-                    stat.st_dev,
-                    stat.st_size,
-                    stat.st_ctime,
-                    stat.st_mtime,
-                    time.time()
-                )
-                sequence.files.append(file_)
 
             if sequence is not None:
                 yield sequence

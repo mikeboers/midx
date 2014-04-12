@@ -1,54 +1,14 @@
-- need to move a lot more logic out of the broker (which becomes a datastore
-  for File and Sequence objects), or encapsulate all scanning logic into a
-  Scanner that a Broker can exploit.
-
-    Broker.add_files(iter of File)
-    Broker.replace_files(iter of File)
-    Broker.get_files(sequence_id)
-    Broker.delete_files(iter of ids)
-
-    Broker.add_sequences(iter of Sequence)
-    Broker.replace_sequences(iter of Sequence)
-
-    Broker.lookup_sequence(prefix, postfix)
-    Broker.iter_sequences(prefix_pattern, postfix_pattern=None)
-
-    Broker.delete_sequences(iter of ids)
-
-- Scanner
-  - should be able to trigger a scan and pipe the Sequence[s] it discovers
-    into a queue so that the Scanner and the Broker can work on different
-    threads
-
-- `midx scan` walks a directory and adds to a given datastore
-
-    - a leading zero indicates that there is padding, otherwise assume None
-    - include/exclude patterns to avoid walking into some directories
-    - include/exclude patterns to not scan certain files
-
-    - merges all new data with all old data
-    - drops old data which no longer seems to exist (perhaps into an archive
-      or by settings an exists=False flag)
-
-    - have the scanner and the database updater in a separate thread and
-      communicating via a Queue, should speed it up somewhat
 
 - need to have file level attributes up front
-    - columns: seq_id, file_no, st_ino, st_dev, st_size, st_mtime, st_ctime, itime (index time), checksum (md5), userdata (json)
-    - don't bother calculating md5s on the initial scan, unless requested
-    - how to update all of this, now that it is in two tables?
-        - go through this process for each (prefix, postfix) group
-        - SELECT existing file numbers
-        - INSERT OR REPLACE into the files table, where the primary key is both the sequence
-          and the file number
-        - DELETE existing ones which were not in this scan
-        - SELECT existing file sequences
-        - merge_overlapping with the new ones
-        - INSERT new sequences
-        - UPDATE files whose index has changed
-        - DELETE old sequences which were merged away
-    - at any point in the above procedure there should be a reasonable-ish
-      view of the data
+    - file_stats table: seq_id, num, st_ino, st_dev, st_size, st_mtime, st_ctime, itime (index time)
+    - file_checksums table: seq_id, num, checksum
+    - these tables are updated by workers who periodically scan everything looking for files which
+      need to be scanned. Query:
+        select * from sequences left outer join file_stats on sequences.id == file_stats.sequence_id WHERE file_stats.sequence_id IS NULL
+
+
+- merge_sequences needs to return there those sequences come from so that the
+  database is able to cleanly merge them
 
 - does it make sense to have some duplicate data, such as start/end of sequences?
   - Sequence.start/end is a summary of File.number
