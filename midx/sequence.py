@@ -1,3 +1,6 @@
+import itertools
+
+
 class Sequence(object):
 
     def __init__(self, prefix, postfix, start, end, padding=None, id=None, files=None):
@@ -10,7 +13,8 @@ class Sequence(object):
         self.files = [] if files is None else files
 
     def __repr__(self):
-        return '<Sequence \'%s%%%sd%s\' from %d to %d; %d files>' % (
+        return '<Sequence %r \'%s%%%sd%s\' from %d to %d; %d files>' % (
+            self.id,
             self.prefix,
             '0%d' % self.padding if self.padding else '',
             self.postfix,
@@ -36,27 +40,39 @@ class Sequence(object):
 
 
 def merge_sequences(seqs, is_sorted=False):
+
     """Merge overlapping sequences.
 
-    If given ``sorted=True``, given sequences must only be iterable.
-    The prefix, postfix, and padding are assumed to be the same.
+    Earlier sequences will be updated to include later sequences.
+
+    If given ``is_sorted=True``, given sequences must only be iterable, and are
+    assumed to be sorted by their prefix, postfix, and start index.
+
+    Returns an interator of ``(dropped_sequences, updated_sequence)``. If a sequence
+    was untouched, then ``dropped_sequences`` will be an empty list.
 
     """
 
-    seqs = seqs if is_sorted else sorted(seqs, key=lambda s: s.start)
-    merged = []
+    seqs = seqs if is_sorted else sorted(seqs, key=lambda s: (s.prefix, s.postfix, s.start))
+    groups = itertools.groupby(seqs, lambda s: (s.prefix, s.postfix))
 
-    for seq in seqs:
-        if merged and seq.start <= merged[-1].end + 1:
-            last = merged.pop(-1)
-            merged.append(Sequence(
-                seq.prefix,
-                seq.postfix,
-                min(seq.start, last.start),
-                max(seq.end, last.end),
-                seq.padding,
-            ))
-        else:
-            merged.append(seq)
+    for group_key, seqs in groups:
+        current = None
 
-    return merged
+        for seq in seqs:
+
+            if current is not None:
+                if seq.start <= current.end + 1:
+                    current.end = seq.end
+                    sources.append(seq)
+                    continue
+                else:
+                    yield sources, current
+                    current = None
+
+            if current is None:
+                current = seq
+                sources = []
+
+        if current is not None:
+            yield sources, current

@@ -3,3 +3,5 @@
 
 /docs/_build
 /tests/sandbox
+/sandbox
+/idx.db

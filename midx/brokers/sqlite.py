@@ -87,22 +87,28 @@ class SQLiteBroker(object):
 
                 cur.execute('SELECT prefix, postfix, start, end, padding, id FROM sequences WHERE prefix = ? AND postfix = ?', [prefix, postfix])
                 existing = [Sequence(*row) for row in cur]
+                merged = list(merge_sequences(itertools.chain(existing, group)))
 
-                if replace:
-                    to_add = group
-                else:
-                    to_add = merge_sequences(itertools.chain(existing, group))
+                for sources, seq in merged:
 
-                for seq in to_add:
                     if seq.id is None:
                         cur.execute('''INSERT INTO sequences
                             (prefix, postfix, start, end, padding)
                             VALUES (?, ?, ?, ?, ?)
                         ''', [prefix, postfix, seq.start, seq.end, seq.padding])
                         seq.id = cur.lastrowid
-                        print 'added', seq.id
 
-                to_delete = set(s.id for s in existing).difference(seq.id for seq in to_add)
+                    # If any of the sources have changed the end.
+                    elif any(src.end != seq.end for src in sources):
+                        cur.execute('''UPDATE sequences SET end = ? WHERE id = ?''', [seq.end, seq.id])
+                        # TODO: update any file pointers to sequences in sources
+
+                if replace:
+                    to_delete = set(s.id for s in existing).difference(seq.id for _, seq in merged)
+                else:
+                    to_delete = set()
+                    for sources, seq in merged:
+                        to_delete.union_update(src.id for src in sources if src.id is not None)
+
                 if to_delete:
-                    print 'deleting', to_delete
                     cur.executemany('''DELETE FROM sequences WHERE id = ?''', ([x] for x in to_delete))

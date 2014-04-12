@@ -10,8 +10,6 @@ from .main import command, argument
 def scan(args):
 
     idx = Index(args.index)
-    count = 0
     for path in args.path:
-        count += idx.scan(path) or 0
-    print count, 'added'
+        idx.scan(path)
 
