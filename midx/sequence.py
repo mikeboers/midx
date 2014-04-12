@@ -1,32 +1,53 @@
+class Sequence(object):
 
-import collections
+    def __init__(self, prefix, postfix, start, end, padding=None, id=None, files=None):
+        self.prefix = prefix
+        self.postfix = postfix
+        self.start = start
+        self.end = end
+        self.padding = padding
+        self.id = id
+        self.files = [] if files is None else files
 
-BaseSequence = collections.namedtuple('BaseSequence',
-    ('prefix', 'postfix', 'start', 'end', 'padding', 'id')
-)
+    def __repr__(self):
+        return '<Sequence \'%s%%%sd%s\' from %d to %d; %d files>' % (
+            self.prefix,
+            '0%d' % self.padding if self.padding else '',
+            self.postfix,
+            self.start,
+            self.end,
+            len(self.files),
+        )
 
-class Sequence(BaseSequence):
-    def __new__(cls, prefix, postfix, start, end, padding=None, id=None):
-        return super(Sequence, cls).__new__(cls, prefix, postfix, start, end, padding, id)
+    def is_matching(self, other):
+        return (
+            self.prefix == other.prefix and
+            self.postfix == other.postfix
+        )
+
+    def is_identical(self, other):
+        return (
+            self.is_matching(other) and
+            self.start == other.start and
+            self.end == other.end
+        )
+
+    __eq__ = is_identical
 
 
-def merge_overlapping(seqs):
+def merge_sequences(seqs, is_sorted=False):
     """Merge overlapping sequences.
 
+    If given ``sorted=True``, given sequences must only be iterable.
     The prefix, postfix, and padding are assumed to be the same.
 
     """
 
-    seqs = sorted(seqs, key=lambda s: s.start)
-    if len(seqs) <= 1:
-        return seqs
-
-    merged = [seqs.pop(0)]
-    last = None
+    seqs = seqs if is_sorted else sorted(seqs, key=lambda s: s.start)
+    merged = []
 
     for seq in seqs:
-
-        if seq.start <= merged[-1].end + 1:
+        if merged and seq.start <= merged[-1].end + 1:
             last = merged.pop(-1)
             merged.append(Sequence(
                 seq.prefix,

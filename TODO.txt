@@ -2,13 +2,23 @@
   for File and Sequence objects), or encapsulate all scanning logic into a
   Scanner that a Broker can exploit.
 
-    Broker.put_files(iter of File)
+    Broker.add_files(iter of File)
+    Broker.replace_files(iter of File)
     Broker.get_files(sequence_id)
     Broker.delete_files(iter of ids)
 
-    Broker.put_sequences(iter of Sequence)
-    Broker.get_sequence(prefix, postfix)
+    Broker.add_sequences(iter of Sequence)
+    Broker.replace_sequences(iter of Sequence)
+
+    Broker.lookup_sequence(prefix, postfix)
+    Broker.iter_sequences(prefix_pattern, postfix_pattern=None)
+
     Broker.delete_sequences(iter of ids)
+
+- Scanner
+  - should be able to trigger a scan and pipe the Sequence[s] it discovers
+    into a queue so that the Scanner and the Broker can work on different
+    threads
 
 - `midx scan` walks a directory and adds to a given datastore
 
@@ -39,6 +49,9 @@
         - DELETE old sequences which were merged away
     - at any point in the above procedure there should be a reasonable-ish
       view of the data
+
+- does it make sense to have some duplicate data, such as start/end of sequences?
+  - Sequence.start/end is a summary of File.number
 
 - `midx checksum [--verify] <db> <path> [...]`
     - calculates the missing checksums in the index under the given paths
