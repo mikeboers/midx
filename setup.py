@@ -19,6 +19,7 @@ setup(
     
     entry_points={
         'midx_commands': [
+            'list = midx.commands.list:list_',
             'scan = midx.commands.scan:scan',
         ],
         'console_scripts': [

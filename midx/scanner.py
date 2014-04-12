@@ -5,7 +5,6 @@ import re
 import time
 
 from midx.sequence import Sequence
-from midx.file import File
 
 
 log = logging.getLogger(__name__)

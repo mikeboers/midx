@@ -13,14 +13,20 @@ class Sequence(object):
         self.files = [] if files is None else files
 
     def __repr__(self):
-        return '<Sequence %r \'%s%%%sd%s\' from %d to %d; %d files>' % (
+        return '<Sequence %r %r from %d to %d; %d files>' % (
             self.id,
-            self.prefix,
-            '0%d' % self.padding if self.padding else '',
-            self.postfix,
+            self.printf_pattern,
             self.start,
             self.end,
             len(self.files)
+        )
+
+    @property
+    def printf_pattern(self):
+        return '%s%%%sd%s' % (
+            self.prefix,
+            '0%d' % self.padding if self.padding else '',
+            self.postfix
         )
 
     def is_matching(self, other):

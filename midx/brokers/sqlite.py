@@ -112,3 +112,18 @@ class SQLiteBroker(object):
 
                 if to_delete:
                     cur.executemany('''DELETE FROM sequences WHERE id = ?''', ([x] for x in to_delete))
+
+    def iter_glob(self, prefix=None, postfix=None):
+        where = []
+        params = []
+        if prefix:
+            where.append('prefix GLOB ?')
+            params.append(prefix)
+        if postfix:
+            where.append('postfix GLOB ?')
+            params.append(postfix)
+        clause = ('WHERE ' + ' AND '.join(where)) if where else ''
+        with self._cursor() as cur:
+            cur.execute('SELECT prefix, postfix, start, end, padding, id FROM sequences %s' % clause, params)
+            for row in cur:
+                yield Sequence(*row)

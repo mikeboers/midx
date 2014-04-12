@@ -20,3 +20,6 @@ class Index(object):
         for key, sequences in itertools.groupby(Scanner().walk(root), key):
             self.broker.add_sequences(sequences, replace=True)
 
+    def glob(self, prefix=None, postfix=None):
+        return self.broker.iter_glob(prefix, postfix)
+
