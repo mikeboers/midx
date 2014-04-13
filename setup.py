@@ -1,4 +1,10 @@
-from setuptools import setup, find_packages
+import sys
+from setuptools import setup, find_packages, Extension
+
+ext_modules = []
+
+if sys.platform.startswith('linux'):
+    ext_modules.append(Extension('midx.notify.fanotify', ['midx/notify/fanotify.c']))
 
 setup(
     
@@ -27,5 +33,7 @@ setup(
             'midx = midx.commands.main:main',
         ],
     },
+
+    ext_modules=ext_modules,
 
 )
