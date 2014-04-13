@@ -108,7 +108,7 @@ class SQLiteBroker(object):
                 else:
                     to_delete = set()
                     for sources, seq in merged:
-                        to_delete.union_update(src.id for src in sources if src.id is not None)
+                        to_delete.update(src.id for src in sources if src.id is not None)
 
                 if to_delete:
                     cur.executemany('''DELETE FROM sequences WHERE id = ?''', ([x] for x in to_delete))

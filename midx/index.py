@@ -3,10 +3,8 @@ import os
 import re
 
 from midx.brokers import get_broker
-from midx.scanner import Scanner
-
-
-sequence_num_re = re.compile(r'^(.+)(\d+)(\D*)$')
+from midx.scanner import Scanner, parse_path
+from midx.sequence import Sequence
 
 
 class Index(object):
@@ -22,4 +20,13 @@ class Index(object):
 
     def glob(self, prefix=None, postfix=None):
         return self.broker.iter_glob(prefix, postfix)
+
+    def add_path(self, path):
+        parsed = parse_path(path)
+        if not parsed:
+            return
+        prefix, postfix, num, padding = parsed
+        seq = Sequence(prefix, postfix, num, num, padding)
+        self.broker.add_sequences([seq], replace=False)
+
 

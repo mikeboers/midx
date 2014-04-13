@@ -14,13 +14,14 @@ setup(
     license='BSD-3',
 
     install_requires=[
-        # XXX
+        'watchdog',
     ],
     
     entry_points={
         'midx_commands': [
             'list = midx.commands.list:list_',
             'scan = midx.commands.scan:scan',
+            'watch = midx.commands.watch:watch',
         ],
         'console_scripts': [
             'midx = midx.commands.main:main',

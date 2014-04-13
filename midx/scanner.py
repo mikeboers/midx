@@ -12,6 +12,16 @@ log = logging.getLogger(__name__)
 sequence_num_re = re.compile(r'^(.+)(\d+)([^0-9/]*)$')
 
 
+def parse_path(path):
+    m = sequence_num_re.match(path)
+    if not m:
+        return
+    prefix, num, postfix = m.groups()
+    padding = len(num) if num.startswith('0') else None
+    num = int(num)
+    return prefix, postfix, num, padding
+
+
 class Scanner(object):
 
     def walk(self, root):
@@ -27,13 +37,10 @@ class Scanner(object):
 
             for file_name in sorted(file_names):
 
-                path = os.path.join(dir_path, file_name)
-                m = sequence_num_re.match(path)
-                if not m:
+                parsed = parse_path(os.path.join(dir_path, file_name))
+                if not parsed:
                     continue
-                prefix, num, postfix = m.groups()
-                padding = len(num) if num.startswith('0') else None
-                num = int(num)
+                prefix, postfix, num, padding = parsed
 
                 if (
                     sequence is None or
