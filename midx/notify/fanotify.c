@@ -33,14 +33,14 @@ pyfanotify_init(PyObject *self, PyObject *args)
 static PyObject *
 pyfanotify_mark(PyObject *self, PyObject *args)
 {
-    int fd, isdir;
+    int fd, is_mount;
     const char *path;
 
-    if (!PyArg_ParseTuple(args, "isi", &fd, &path, &isdir)) return NULL;
+    if (!PyArg_ParseTuple(args, "isi", &fd, &path, &is_mount)) return NULL;
 
     int res = fanotify_mark(
         fd,
-        FAN_MARK_ADD | (isdir ? FAN_MARK_MOUNT : 0),
+        FAN_MARK_ADD | (is_mount ? FAN_MARK_MOUNT : 0),
         FAN_MODIFY | FAN_CLOSE_WRITE | FAN_EVENT_ON_CHILD | FAN_ONDIR,
         AT_FDCWD,
         path
@@ -78,7 +78,7 @@ pyfanotify_read(PyObject *self, PyObject *args)
     if (metadata.fd >= 0) {
         sprintf(fdpath, "/proc/self/fd/%d", metadata.fd);
         link_len = readlink(fdpath, path, sizeof(path) - 1);
-        res = PyString_FromStringAndSize(path, link_len);
+        res = Py_BuildValue("iis#", metadata.pid, metadata.mask, path, link_len);
         close(metadata.fd);
     } else {
         res = Py_None;
@@ -101,4 +101,9 @@ initfanotify(void)
 {
     PyObject *m = Py_InitModule("midx.notify.fanotify", FanotifyMethods);
     if (!m) return;
+
+    PyModule_AddObject(m, "FAN_MODIFY", PyInt_FromLong(FAN_MODIFY));
+    PyModule_AddObject(m, "FAN_CLOSE_WRITE", PyInt_FromLong(FAN_CLOSE_WRITE));
+    PyModule_AddObject(m, "FAN_EVENT_ON_CHILD", PyInt_FromLong(FAN_EVENT_ON_CHILD));
+    PyModule_AddObject(m, "FAN_ONDIR", PyInt_FromLong(FAN_ONDIR));
 }
