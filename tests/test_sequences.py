@@ -43,6 +43,15 @@ class TestSequenceMerging(TestCase):
             ([b], Sequence('', '', 1, 20)),
         ])
 
+    def test_touching_one(self):
+        # Adding a single new frame to the end.
+        a = Sequence('', '', 1, 10, id=1)
+        b = Sequence('', '', 11, 11, id=None)
+        m = list(merge_sequences((a, b)))
+        self.assertEqual(m, [
+            ([b], Sequence('', '', 1, 11)),
+        ])
+
     def test_exact(self):
 
         a = Sequence('', '', 1, 10, id=1)

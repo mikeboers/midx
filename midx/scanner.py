@@ -9,7 +9,7 @@ from midx.sequence import Sequence
 
 log = logging.getLogger(__name__)
 
-sequence_num_re = re.compile(r'^(.+)(\d+)([^0-9/]*)$')
+sequence_num_re = re.compile(r'^(.+?)(\d+)([^0-9/]*)$')
 
 
 def parse_path(path):
