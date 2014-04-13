@@ -73,7 +73,7 @@ class SQLiteBroker(object):
 
         for name, func in schema_migrations:
             if name not in applied_patches:
-                log.info('applying schema migration %s' % name)
+                log.debug('applying schema migration %s' % name)
                 with self._cursor() as cur:
                     func(cur)
                     cur.execute('INSERT INTO schema_migrations (name) VALUES (?)', [name])
@@ -87,11 +87,14 @@ class SQLiteBroker(object):
 
                 cur.execute('SELECT prefix, postfix, start, end, padding, id FROM sequences WHERE prefix = ? AND postfix = ?', [prefix, postfix])
                 existing = [Sequence(*row) for row in cur]
+                # print 'existing', existing
                 merged = list(merge_sequences(itertools.chain(existing, group)))
+                # print 'merged', merged
 
                 for sources, seq in merged:
 
                     if seq.id is None:
+                        # print 'inserting', seq
                         cur.execute('''INSERT INTO sequences
                             (prefix, postfix, start, end, padding)
                             VALUES (?, ?, ?, ?, ?)
@@ -99,8 +102,9 @@ class SQLiteBroker(object):
                         seq.id = cur.lastrowid
 
                     # If any of the sources have changed the end.
-                    elif any(src.end != seq.end for src in sources):
-                        cur.execute('''UPDATE sequences SET end = ? WHERE id = ?''', [seq.end, seq.id])
+                    elif any(src.start != seq.start or src.end != seq.end for src in sources):
+                        # print 'updating', seq
+                        cur.execute('''UPDATE sequences SET start = ?, end = ? WHERE id = ?''', [seq.start, seq.end, seq.id])
                         # TODO: update any file pointers to sequences in sources
 
                 if replace:
@@ -111,6 +115,7 @@ class SQLiteBroker(object):
                         to_delete.update(src.id for src in sources if src.id is not None)
 
                 if to_delete:
+                    # print 'to_delete', to_delete
                     cur.executemany('''DELETE FROM sequences WHERE id = ?''', ([x] for x in to_delete))
 
     def iter_glob(self, prefix=None, postfix=None):
