@@ -30,8 +30,9 @@ class Scanner(object):
 
         for dir_path, dir_names, file_names in os.walk(root):
 
-            # TODO: better directory filtering.
+            # TODO: better filtering.
             dir_names[:] = [x for x in dir_names if not x.startswith('.')]
+            file_names = [x for x in file_names if not x.startswith('.')]
 
             sequence = None
 
