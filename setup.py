@@ -2,9 +2,13 @@ import sys
 from setuptools import setup, find_packages, Extension
 
 ext_modules = []
+install_requires = []
 
 if sys.platform.startswith('linux'):
     ext_modules.append(Extension('midx.notify.fanotify', ['midx/notify/fanotify.c']))
+elif sys.platform == 'darwin':
+    install_requires.append('watchdog')
+
 
 setup(
     
@@ -19,9 +23,8 @@ setup(
     author_email='midx@mikeboers.com',
     license='BSD-3',
 
-    install_requires=[
-        'watchdog',
-    ],
+    install_requires=install_requires,
+    ext_modules=ext_modules,
     
     entry_points={
         'midx_commands': [
@@ -34,6 +37,5 @@ setup(
         ],
     },
 
-    ext_modules=ext_modules,
 
 )
