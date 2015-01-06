@@ -5,7 +5,7 @@ from .main import command, argument
 @command(
     argument('index'),
     argument('path', nargs='+'),
-    help='scan recursively for files',
+    help='scan a path recursively',
 )
 def scan(args):
 

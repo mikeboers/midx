@@ -1,14 +1,20 @@
 
+- fanotify module -> _fanotify
+- try to `select` it
+- make a Fanotify class
+
+- document CLI API
+
+- `midx daemon` for one copy to sit in the background and do all of the listening
+  via fanotify, etc.
+    - `midx register [--stop] index.db path [...]`
+
 - need to have file level attributes up front
     - file_stats table: seq_id, num, st_ino, st_dev, st_size, st_mtime, st_ctime, itime (index time)
     - file_checksums table: seq_id, num, checksum
     - these tables are updated by workers who periodically scan everything looking for files which
       need to be scanned. Query:
         select * from sequences left outer join file_stats on sequences.id == file_stats.sequence_id WHERE file_stats.sequence_id IS NULL
-
-
-- merge_sequences needs to return there those sequences come from so that the
-  database is able to cleanly merge them
 
 - does it make sense to have some duplicate data, such as start/end of sequences?
   - Sequence.start/end is a summary of File.number
@@ -17,15 +23,12 @@
     - calculates the missing checksums in the index under the given paths
     - if asked to verify, calculates all checksums and compares them
 
-- `midx watch` via fsevents/fanotify/inotify
-    - need a common-ish API
-    - we still cant recursively watch a subset of directories, but fanotify
-      will efficiently watch a full filesystem. If we have a single daemon
-      that is watching the full file system then it can dispatch events to
-      individual indexes as it sees fit. `midx register <index> <path> [...]`
-      will connect to the daemon via a socket and register a path.
-    - fanotify can't see deletes, but perhaps we can add a little bit of
-      tracking to find renames (by examining inodes of newly created files, and
-      seeing if they match that of a file in the cache that no longer exists).
+- fanotify can't see deletes, but perhaps we can add a little bit of
+  tracking to find renames (by examining inodes of newly created files, and
+  seeing if they match that of a file in the cache that no longer exists).
 
-- `midx grep`
+  Or, we can just use inotify...
+
+  No matter what we do with fanotify/inotify/fsevents we WILL miss files and
+  periodically need to do a full scan.
+

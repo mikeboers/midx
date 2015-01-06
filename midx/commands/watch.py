@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 @command(
     argument('index'),
     argument('path', nargs='+'),
-    help='watch paths for updates',
+    help='watch for new files',
 )
 def watch(args):
     idx = Index(args.index)
